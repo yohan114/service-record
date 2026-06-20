@@ -243,11 +243,24 @@
 
             <div class="search-tabs xref-tabs">
                 <button class="tab-btn active" data-xtab="search" onclick="switchXrefTab('search')">Cross-Reference Results</button>
+                <button class="tab-btn" data-xtab="vehicle" onclick="switchXrefTab('vehicle')">Find by Vehicle</button>
                 <button class="tab-btn" data-xtab="db" onclick="switchXrefTab('db')">Filter Database</button>
             </div>
 
             <div id="xref-search-panel">
                 <div id="xref-results" class="xref-results"><div class="empty-note">Enter a filter number above to check its cross-references.</div></div>
+            </div>
+
+            <div id="xref-vehicle-panel" style="display:none;">
+                <div class="xref-veh-search">
+                    <label>Pick one of your fleet vehicles to see the exact filters it uses — with every cross-reference equivalent:</label>
+                    <div class="combo" id="xrefVehCombo">
+                        <input type="text" id="xrefVehInput" placeholder="Type E&C code, registration, brand or model… (e.g. LB-01)" autocomplete="off"
+                               oninput="filterXrefVehPicker()" onfocus="filterXrefVehPicker()">
+                        <div class="combo-list" id="xrefVehList"></div>
+                    </div>
+                </div>
+                <div id="xref-vehicle-results" class="xref-results"><div class="empty-note">Search and select a vehicle above to list its filter kit.</div></div>
             </div>
 
             <div id="xref-db-panel" style="display:none;">

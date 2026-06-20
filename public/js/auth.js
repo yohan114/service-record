@@ -8,7 +8,24 @@ function isAdmin() { return currentUser && currentUser.role === 'admin'; }
 function showLogin(hint) {
     document.getElementById('loginScreen').style.display = 'flex';
     if (hint) document.getElementById('login-hint').innerHTML = hint;
+    // Opening the HTML file directly (file://) can never reach the API.
+    if (location.protocol === 'file:') {
+        document.getElementById('login-err').innerHTML =
+            '⚠️ This page was opened as a file. Start the server (run.bat or <code>npm start</code>) and open <b>http://localhost:2300</b> instead.';
+    }
     setTimeout(() => document.getElementById('login-user').focus(), 60);
+}
+
+// Turns a raw fetch/HTTP error into actionable guidance for the login box.
+function connectivityHelp(err) {
+    const m = (err && err.message) || '';
+    if (/404|Unknown API route/i.test(m)) {
+        return 'Couldn’t reach the app’s server (404). Open the app at the address the server prints — <b>http://localhost:2300</b> — using <b>run.bat</b> or <code>npm start</code>. Don’t open the HTML file directly or through a “Live Server” preview.';
+    }
+    if (/Failed to fetch|NetworkError|load failed/i.test(m)) {
+        return 'Couldn’t connect to the server. Make sure it’s running (<b>run.bat</b> or <code>npm start</code>) and that you opened <b>http://localhost:2300</b>.';
+    }
+    return null;
 }
 function hideLogin() { document.getElementById('loginScreen').style.display = 'none'; }
 
@@ -34,7 +51,9 @@ async function doLogin(e) {
         hideLogin();
         await onAuthenticated();
     } catch (err) {
-        errEl.textContent = err.message || 'Login failed';
+        const help = connectivityHelp(err);
+        if (help) errEl.innerHTML = help;
+        else errEl.textContent = err.message || 'Login failed';
     } finally {
         btn.disabled = false; btn.textContent = 'Sign In';
     }

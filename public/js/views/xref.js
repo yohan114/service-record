@@ -97,9 +97,55 @@ function renderXrefCard(r, query) {
 function switchXrefTab(tab) {
     document.querySelectorAll('.xref-tabs .tab-btn').forEach(b => b.classList.toggle('active', b.dataset.xtab === tab));
     document.getElementById('xref-search-panel').style.display = tab === 'search' ? 'block' : 'none';
+    document.getElementById('xref-vehicle-panel').style.display = tab === 'vehicle' ? 'block' : 'none';
     document.getElementById('xref-db-panel').style.display = tab === 'db' ? 'block' : 'none';
     if (tab === 'db' && !fdbLoaded) loadFilterDb();
+    if (tab === 'vehicle') setTimeout(() => document.getElementById('xrefVehInput').focus(), 60);
 }
+
+// ---------------- Find filters by fleet vehicle ----------------
+function filterXrefVehPicker() {
+    const q = document.getElementById('xrefVehInput').value.trim().toUpperCase();
+    const list = document.getElementById('xrefVehList');
+    if (!q) { list.classList.remove('open'); return; }
+    const matches = (globalData.vehicles || []).filter(v =>
+        (v.ECNumber || '').toUpperCase().includes(q) ||
+        (v.RegistrationNo || '').toUpperCase().includes(q) ||
+        (v.Brand || '').toUpperCase().includes(q) ||
+        (v.ModelNo || '').toUpperCase().includes(q) ||
+        (v.VehicleType || '').toUpperCase().includes(q)).slice(0, 40);
+    list.innerHTML = matches.length
+        ? matches.map(v => `<div class="combo-item" onclick="pickXrefVehicle('${v.VehicleID}')">
+              <b>${esc(v.ECNumber || '—')}</b> ${esc(v.Brand || '')} ${esc(v.ModelNo || v.VehicleType || '')}
+              <span class="muted">${esc(v.RegistrationNo || '')}</span></div>`).join('')
+        : '<div class="combo-item muted">No vehicle found.</div>';
+    list.classList.add('open');
+}
+
+async function pickXrefVehicle(id) {
+    const v = globalData.vehicleById.get(String(id));
+    document.getElementById('xrefVehInput').value = v ? vehicleLabel(v) : '';
+    document.getElementById('xrefVehList').classList.remove('open');
+    const box = document.getElementById('xref-vehicle-results');
+    box.innerHTML = '<div class="loading">Loading filter kit…</div>';
+    try {
+        const data = await api('/api/vehicles/' + id + '/filters');
+        const veh = data.vehicle;
+        const title = `${esc(veh.ECNumber || '')} ${esc(veh.Brand || '')} ${esc(veh.ModelNo || veh.VehicleType || '')}`.trim();
+        if (!data.filters.length) {
+            box.innerHTML = `<div class="xref-result-head"><b>${title}</b></div>
+                <div class="empty-note">No filters are linked to this vehicle in the catalog yet. Try the “Cross-Reference Results” tab to search by a part number.</div>`;
+            return;
+        }
+        box.innerHTML = `<div class="xref-result-head"><b>${title}</b> — ${data.filters.length} filter${data.filters.length === 1 ? '' : 's'} in this machine's kit${veh.Site ? ` · <span class="muted">${esc(veh.Site)}</span>` : ''}</div>`
+            + data.filters.map(r => renderXrefCard(r, '')).join('');
+    } catch (e) { box.innerHTML = '<div class="empty-note err">Error: ' + esc(e.message) + '</div>'; }
+}
+
+// close the vehicle combobox on outside click
+document.addEventListener('click', e => {
+    if (!e.target.closest('#xrefVehCombo')) document.getElementById('xrefVehList')?.classList.remove('open');
+});
 
 // ---------------- Add a manual cross-reference ----------------
 let addXrefFilterId = null;

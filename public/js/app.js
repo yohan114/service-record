@@ -65,7 +65,10 @@ async function initApp() {
         await onAuthenticated();
     } catch (err) {
         console.error('Auth check failed:', err);
-        showLogin(`Could not reach the server. Is it running? (${esc(err.message)})`);
+        showLogin('');
+        const help = (typeof connectivityHelp === 'function') && connectivityHelp(err);
+        document.getElementById('login-err').innerHTML = help ||
+            `Could not reach the server. Is it running? (${esc(err.message)})`;
     }
 }
 

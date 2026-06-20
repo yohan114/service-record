@@ -251,8 +251,16 @@ function deleteManualRef(xrefId) {
     db.prepare('DELETE FROM FilterCrossRefs WHERE XRefID = ?').run(xrefId);
 }
 
+// All filters used by one fleet vehicle, each with its full equivalence set.
+function filtersForVehicle(vehicleId) {
+    const fids = db.prepare(
+        `SELECT DISTINCT FilterID FROM VehicleFilters
+         WHERE MatchedVehicleID = ? AND FilterID IS NOT NULL`).all(vehicleId).map(r => r.FilterID);
+    return fids.map(id => describeFilter(id)).filter(Boolean);
+}
+
 module.exports = {
     normalize, parseCrossRefText, isPartNumber,
     rebuildIndex, ensureIndex, indexStats, describeFilter,
-    search, addManualRef, deleteManualRef
+    search, addManualRef, deleteManualRef, filtersForVehicle
 };

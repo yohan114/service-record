@@ -483,6 +483,15 @@ app.post('/api/xref/rebuild', auth.requireAdmin, h((req, res) => {
     res.json({ success: true, ...xref.rebuildIndex() });
 }));
 
+// All filters (with cross-references) used by one of OUR fleet vehicles
+app.get('/api/vehicles/:id/filters', h((req, res) => {
+    const v = db.prepare(`SELECT VehicleID, EquipmentDescription, ECNumber, Brand, ModelNo,
+                                 VehicleType, RegistrationNo, Site
+                          FROM Vehicles WHERE VehicleID = ?`).get(req.params.id);
+    if (!v) return res.status(404).json({ error: 'Vehicle not found' });
+    res.json({ vehicle: v, filters: xref.filtersForVehicle(Number(req.params.id)) });
+}));
+
 // ------------------------------------------------------------
 //  Dashboard stats
 // ------------------------------------------------------------
@@ -577,6 +586,9 @@ app.delete('/api/vehicles/:id', h((req, res) => {
     buildCatalog(); // rebuild mem cache
     res.json({ success: true });
 }));
+
+// Clean JSON 404 for any unmatched API route (makes "wrong origin" mistakes obvious)
+app.use('/api', (req, res) => res.status(404).json({ error: `Unknown API route: ${req.method} ${req.path}` }));
 
 // SPA fallback for client-side hash routing
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));

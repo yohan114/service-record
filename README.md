@@ -29,6 +29,20 @@ You'll be asked to set a new password immediately. Override the defaults with
 the `ADMIN_USER` / `ADMIN_PASS` environment variables before the first seed.
 Admins can add more users (admin or normal) from the account menu → **Manage users**.
 
+### Troubleshooting — "HTTP 404" on the login screen
+
+A 404 (or "could not reach the server") when signing in almost always means the
+page was **not opened through this Node server**, so the `/api/...` calls have
+nowhere to go. Make sure you:
+
+1. Started the server — `npm start`, **run.bat**, or **start_app.ps1** — and saw
+   `Service Record System running on http://localhost:2300`.
+2. Opened the app at **http://localhost:2300** in the browser.
+
+Do **not** open `public/index.html` directly (a `file://` URL) or through a
+"Live Server"/preview extension — those serve the HTML but not the API, which
+produces exactly this 404. The login box now detects these cases and tells you.
+
 On Windows you can simply run **`start_app.ps1`**, which does all three steps and
 opens the browser for you.
 
@@ -78,6 +92,11 @@ Searching ignores spaces, dashes and case, so `FF-5045`, `ff5045` and `FF 5045`
 all match. Results group equivalents by brand, highlight the term you searched,
 and show the machines that use the filter plus a price (looked up through any
 equivalent code in the price book).
+
+The **Find by Vehicle** tab lets you pick any of your fleet machines (by E&C
+code, registration, brand or model) and instantly lists the exact filters that
+machine uses — each with its full set of cross-reference equivalents, price and
+the sister machines that share it.
 
 The index is **fully editable** — add an equivalent from any result card and it
 becomes instantly searchable. Manual additions are preserved across re-seeds;
