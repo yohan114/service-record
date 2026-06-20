@@ -9,6 +9,36 @@
 </head>
 <body>
 
+    <!-- ============ Login Screen (overlay shown until authenticated) ============ -->
+    <div id="loginScreen" class="login-screen" style="display:none;">
+        <div class="login-bg"></div>
+        <div class="login-card">
+            <div class="login-brand">
+                <div class="login-logo-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                </div>
+                <div>
+                    <div class="login-logo-text">E&amp;C Manager</div>
+                    <div class="login-logo-sub">Fleet &amp; Service Records</div>
+                </div>
+            </div>
+            <h1>Welcome back</h1>
+            <p class="login-sub">Sign in to access the service record system.</p>
+            <form id="loginForm" onsubmit="doLogin(event)" autocomplete="on">
+                <label for="login-user">Username</label>
+                <input id="login-user" type="text" autocomplete="username" placeholder="e.g. admin" required>
+                <label for="login-pass">Password</label>
+                <div class="pw-wrap">
+                    <input id="login-pass" type="password" autocomplete="current-password" placeholder="Your password" required>
+                    <button type="button" class="pw-toggle" onclick="togglePw('login-pass', this)" tabindex="-1">show</button>
+                </div>
+                <div class="login-err" id="login-err"></div>
+                <button class="btn btn-primary btn-block login-submit" type="submit" id="login-btn">Sign In</button>
+            </form>
+            <div class="login-hint" id="login-hint"></div>
+        </div>
+    </div>
+
     <!-- Mobile Top Header (Responsive menu button) -->
     <div class="mobile-header no-print">
         <button class="menu-toggle-btn" onclick="toggleSidebar(true)">☰</button>
@@ -47,6 +77,11 @@
                 <svg class="nav-svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13" rx="2" ry="2"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
                 Fleet & Filters
             </a>
+            <a href="#/xref" class="nav-item" id="nav-xref">
+                <svg class="nav-svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>
+                Cross-Reference
+                <span class="nav-badge">NEW</span>
+            </a>
             <a href="#/prices" class="nav-item" id="nav-prices">
                 <svg class="nav-svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
                 Price Lists
@@ -58,6 +93,30 @@
         </nav>
         <div class="sidebar-foot">
             <button class="btn btn-success btn-block" onclick="openNewServiceSheet()">+ New Service</button>
+            <div class="account-box" id="accountBox">
+                <button class="account-btn" type="button" onclick="toggleAccountMenu()">
+                    <span class="account-avatar" id="acc-avatar">?</span>
+                    <span class="account-info">
+                        <span class="account-name" id="acc-name">—</span>
+                        <span class="account-role" id="acc-role"></span>
+                    </span>
+                    <svg class="account-caret" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+                </button>
+                <div class="account-menu" id="accountMenu">
+                    <button type="button" onclick="openChangePassword()">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        Change password
+                    </button>
+                    <button type="button" id="acc-users-btn" style="display:none" onclick="goUsers()">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        Manage users
+                    </button>
+                    <button type="button" class="danger" onclick="doLogout()">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                        Sign out
+                    </button>
+                </div>
+            </div>
         </div>
     </aside>
 
@@ -162,6 +221,55 @@
             <div id="price-panel"><div class="loading">Loading…</div></div>
         </div>
 
+        <!-- ============ Filter Cross-Reference ============ -->
+        <div id="view-xref" class="view" style="display:none;">
+            <header class="page-header">
+                <h1>Filter Cross-Reference</h1>
+                <div class="xref-stats" id="xref-stats"></div>
+            </header>
+
+            <div class="xref-hero">
+                <div class="xref-hero-inner">
+                    <h2>Find an equivalent filter</h2>
+                    <p>Type <b>any</b> filter part number — OEM, HIFI, Fleetguard, Donaldson, Baldwin, Sakura, VIC… and instantly see every cross-referenced equivalent, the machines that use it, and its price.</p>
+                    <div class="xref-search-box">
+                        <svg class="search-svg-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        <input type="text" id="xrefInput" placeholder="e.g. FF5045, P550410, 320/04134, FC-1001…" autocomplete="off" oninput="debounceXref()">
+                        <button class="btn btn-primary" onclick="runXrefSearch()">Search</button>
+                    </div>
+                    <div class="xref-examples" id="xref-examples"></div>
+                </div>
+            </div>
+
+            <div class="search-tabs xref-tabs">
+                <button class="tab-btn active" data-xtab="search" onclick="switchXrefTab('search')">Cross-Reference Results</button>
+                <button class="tab-btn" data-xtab="db" onclick="switchXrefTab('db')">Filter Database</button>
+            </div>
+
+            <div id="xref-search-panel">
+                <div id="xref-results" class="xref-results"><div class="empty-note">Enter a filter number above to check its cross-references.</div></div>
+            </div>
+
+            <div id="xref-db-panel" style="display:none;">
+                <div class="filter-bar wrap">
+                    <input type="text" class="search-input slim" id="fdbSearch" placeholder="Search part no, description, category…" oninput="debounceFdb()">
+                    <select class="filter-select" id="fdbCategory" onchange="loadFilterDb()"><option value="">All categories</option></select>
+                    <div class="result-count" id="fdbCount"></div>
+                </div>
+                <div id="fdb-list" class="fdb-list"><div class="loading">Loading…</div></div>
+                <div class="center-pad"><button class="btn btn-secondary" id="fdbMoreBtn" style="display:none" onclick="loadMoreFilterDb()">Load more</button></div>
+            </div>
+        </div>
+
+        <!-- ============ User Management (admin) ============ -->
+        <div id="view-users" class="view" style="display:none;">
+            <header class="page-header">
+                <h1>User Management</h1>
+                <button class="btn btn-success" onclick="openAddUser()">+ Add User</button>
+            </header>
+            <div id="users-list" class="card panel"><div class="loading">Loading…</div></div>
+        </div>
+
         <!-- ============ Settings ============ -->
         <div id="view-settings" class="view" style="display:none;">
             <header class="page-header"><h1>Settings</h1></header>
@@ -260,6 +368,28 @@
                     <textarea id="ns-repair" placeholder="Enter repair details…"></textarea>
                 </div>
 
+                <!-- Attachments (invoices, photos, reports) -->
+                <div class="attach-section no-print" id="ns-attach-section">
+                    <div class="attach-head">
+                        <b>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                            Attachments
+                        </b>
+                        <span class="muted small">PDF, JPG, PNG, Word, Excel · up to 25&nbsp;MB</span>
+                        <label class="btn btn-mini btn-secondary attach-add-btn" id="ns-attach-add" style="display:none">
+                            + Add file
+                            <input type="file" id="ns-attach-input" multiple
+                                   accept=".pdf,.jpg,.jpeg,.png,.gif,.webp,.bmp,.tif,.tiff,.heic,.doc,.docx,.xls,.xlsx,.csv,.txt"
+                                   style="display:none" onchange="uploadAttachments(this.files); this.value='';">
+                        </label>
+                    </div>
+                    <div id="ns-attach-dropzone" class="attach-dropzone" style="display:none">
+                        Drag &amp; drop files here, or click <b>“+ Add file”</b>
+                    </div>
+                    <div id="ns-attach-list" class="attach-list"></div>
+                    <div class="muted small" id="ns-attach-hint"></div>
+                </div>
+
                 <div class="modal-actions no-print">
                     <button type="button" class="btn btn-secondary" id="ns-delete" style="display:none;margin-right:auto" onclick="deleteCurrentService()">Delete</button>
                     <button type="button" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px;" onclick="window.print()">
@@ -339,9 +469,87 @@
         </div>
     </div>
 
+    <!-- ============ Change Password Modal ============ -->
+    <div id="changePwModal" class="modal">
+        <div class="modal-content" style="max-width:440px">
+            <div class="modal-header">
+                <h2>Change Password</h2>
+                <button class="btn btn-secondary" onclick="closeModal('changePwModal')">Close</button>
+            </div>
+            <form id="changePwForm" onsubmit="submitChangePassword(event)" style="padding:24px">
+                <p class="muted small" id="pw-force-note" style="display:none;margin-bottom:14px"></p>
+                <label class="stk-lbl">Current password</label>
+                <input type="password" id="pw-current" autocomplete="current-password" required>
+                <label class="stk-lbl">New password</label>
+                <input type="password" id="pw-new" autocomplete="new-password" required>
+                <label class="stk-lbl">Confirm new password</label>
+                <input type="password" id="pw-confirm" autocomplete="new-password" required>
+                <div class="login-err" id="pw-err"></div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('changePwModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update Password</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ============ Add User Modal (admin) ============ -->
+    <div id="addUserModal" class="modal">
+        <div class="modal-content" style="max-width:460px">
+            <div class="modal-header">
+                <h2>Add User</h2>
+                <button class="btn btn-secondary" onclick="closeModal('addUserModal')">Close</button>
+            </div>
+            <form id="addUserForm" onsubmit="submitAddUser(event)" style="padding:24px">
+                <label class="stk-lbl">Username</label>
+                <input type="text" id="au-username" autocomplete="off" required>
+                <label class="stk-lbl">Full name</label>
+                <input type="text" id="au-fullname" autocomplete="off">
+                <label class="stk-lbl">Temporary password</label>
+                <input type="text" id="au-password" autocomplete="off" required>
+                <label class="stk-lbl">Role</label>
+                <select id="au-role" class="filter-select" style="width:100%;height:42px">
+                    <option value="user">User — can record &amp; look up services</option>
+                    <option value="admin">Admin — full access incl. users &amp; settings</option>
+                </select>
+                <p class="muted small" style="margin-top:10px">The user will be asked to set their own password at first sign-in.</p>
+                <div class="login-err" id="au-err"></div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('addUserModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ============ Add Cross-Reference Modal ============ -->
+    <div id="addXrefModal" class="modal">
+        <div class="modal-content" style="max-width:460px">
+            <div class="modal-header">
+                <h2>Add Cross-Reference</h2>
+                <button class="btn btn-secondary" onclick="closeModal('addXrefModal')">Close</button>
+            </div>
+            <form id="addXrefForm" onsubmit="submitAddXref(event)" style="padding:24px">
+                <p class="muted small" id="ax-for" style="margin-bottom:14px"></p>
+                <label class="stk-lbl">Brand (optional)</label>
+                <input type="text" id="ax-brand" placeholder="e.g. Fleetguard, Donaldson, Sakura" autocomplete="off">
+                <label class="stk-lbl">Part number</label>
+                <input type="text" id="ax-part" placeholder="e.g. FF5045" autocomplete="off" required>
+                <label class="stk-lbl">Note (optional)</label>
+                <input type="text" id="ax-note" placeholder="e.g. verified with supplier" autocomplete="off">
+                <div class="login-err" id="ax-err"></div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('addXrefModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Equivalent</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div id="toast" class="toast"></div>
 
     <script src="js/app.js"></script>
+    <script src="js/auth.js"></script>
     <script src="js/views/fleet.js"></script>
     <script src="js/views/dashboard.js"></script>
     <script src="js/views/daily.js"></script>
@@ -349,5 +557,8 @@
     <script src="js/views/pricelists.js"></script>
     <script src="js/views/settings.js"></script>
     <script src="js/views/service_form.js"></script>
+    <script src="js/views/attachments.js"></script>
+    <script src="js/views/xref.js"></script>
+    <script src="js/views/users.js"></script>
 </body>
 </html>

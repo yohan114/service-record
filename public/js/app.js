@@ -15,17 +15,22 @@ const ROUTES = {
     '#/daily':     { view: 'daily',     init: () => initDailyView() },
     '#/records':   { view: 'records',   init: () => initRecordsView() },
     '#/fleet':     { view: 'fleet',     init: () => performSearch() },
+    '#/xref':      { view: 'xref',      init: () => initXrefView() },
     '#/prices':    { view: 'prices',    init: () => initPriceLists() },
+    '#/users':     { view: 'users',     init: () => loadUsers() },
     '#/settings':  { view: 'settings',  init: () => loadSettingsView() }
 };
 
 function handleRoute() {
     const hash = window.location.hash || '#/dashboard';
     const route = ROUTES[hash] || ROUTES['#/dashboard'];
+    // Guard admin-only routes for non-admin users
+    if (route.view === 'users' && !isAdmin()) { location.hash = '#/dashboard'; return; }
     document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     document.getElementById('view-' + route.view).style.display = 'block';
-    document.getElementById('nav-' + route.view).classList.add('active');
+    const navEl = document.getElementById('nav-' + route.view);
+    if (navEl) navEl.classList.add('active');
     
     // Close sidebar on mobile navigation
     toggleSidebar(false);
@@ -51,7 +56,28 @@ function toggleSidebar(show) {
 }
 window.addEventListener('hashchange', handleRoute);
 
+// Step 1: check who is signed in. If nobody, show the login screen and stop.
 async function initApp() {
+    try {
+        const me = await fetch('/api/auth/me').then(r => r.json());
+        if (!me.user) { showLogin(); return; }
+        currentUser = me.user;
+        await onAuthenticated();
+    } catch (err) {
+        console.error('Auth check failed:', err);
+        showLogin(`Could not reach the server. Is it running? (${esc(err.message)})`);
+    }
+}
+
+// Step 2: runs after a successful sign-in (on page load or via the login form).
+async function onAuthenticated() {
+    renderAccount(currentUser);
+    await loadAppData();
+    if (currentUser.mustChangePassword) openChangePassword(true);
+}
+
+// Step 3: load the reference catalog + settings the rest of the app needs.
+async function loadAppData() {
     try {
         const [catRes, setRes] = await Promise.all([fetch('/api/catalog'), fetch('/api/settings')]);
         const db = await catRes.json();
@@ -66,6 +92,7 @@ async function initApp() {
         globalData.rates    = s.rates || globalData.rates;
         globalData.settings = s.settings || globalData.settings;
 
+        globalData.brands.clear(); globalData.types.clear(); globalData.vehicleById.clear();
         globalData.vehicles.forEach(v => {
             globalData.vehicleById.set(String(v.VehicleID), v);
             if (v.VehicleType) globalData.types.add(v.VehicleType.trim().toUpperCase());
@@ -77,7 +104,7 @@ async function initApp() {
     } catch (err) {
         console.error('Error loading data:', err);
         document.body.insertAdjacentHTML('afterbegin',
-            `<div style="background:#7f1d1d;color:#fff;padding:12px;text-align:center">Failed to connect to the server. Is it running? (${err.message})</div>`);
+            `<div style="background:#7f1d1d;color:#fff;padding:12px;text-align:center">Failed to load data from the server. (${esc(err.message)})</div>`);
     }
 }
 
@@ -155,6 +182,11 @@ async function api(url, method = 'GET', body) {
     if (body !== undefined) opt.body = JSON.stringify(body);
     const res = await fetch(url, opt);
     const data = await res.json().catch(() => ({}));
+    if (res.status === 401 && !url.includes('/api/auth/login')) {
+        // Session expired or missing — bounce back to the login screen
+        if (typeof showLogin === 'function') { currentUser = null; showLogin('Your session expired. Please sign in again.'); }
+        throw new Error(data.error || 'Authentication required');
+    }
     if (!res.ok) throw new Error(data.error || ('HTTP ' + res.status));
     return data;
 }

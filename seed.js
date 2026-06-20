@@ -13,6 +13,7 @@ const fs = require('fs');
 const path = require('path');
 const XLSX = require('xlsx');
 const { db, computeTotals } = require('./db');
+const xref = require('./xref');
 
 // ---- Load the exported catalog (file uses top-level `const`, no exports) ----
 function loadCatalogDump() {
@@ -109,6 +110,11 @@ const seedCatalog = db.transaction(() => {
 });
 seedCatalog();
 console.log(`  Vehicles: ${D.DB_VEHICLES.length}, Filters: ${D.DB_FILTERS.length}, Links: ${D.DB_VF_LINKS.length}, Genuine: ${D.DB_GENUINE_PRICES.length}, Motorcycles: ${D.DB_MOTORCYCLES.length}`);
+
+// Rebuild the filter cross-reference index from the freshly-seeded catalog
+// (manual, user-added cross-references are preserved).
+const xr = xref.rebuildIndex();
+console.log(`  Cross-reference index: ${xr.indexed} part numbers indexed from ${xr.filters} filters`);
 
 // ------------------------------------------------------------
 //  2. Filter price book (only when empty — it is user-editable)

@@ -210,6 +210,62 @@ CREATE TABLE IF NOT EXISTS Settings (
     Key   TEXT PRIMARY KEY,
     Value TEXT
 );
+
+-- ============ Users & sessions (authentication) ============
+CREATE TABLE IF NOT EXISTS Users (
+    UserID             INTEGER PRIMARY KEY AUTOINCREMENT,
+    Username           TEXT UNIQUE NOT NULL,
+    FullName           TEXT DEFAULT '',
+    PasswordHash       TEXT NOT NULL,
+    PasswordSalt       TEXT NOT NULL,
+    Role               TEXT NOT NULL DEFAULT 'user',     -- 'admin' | 'user'
+    Active             INTEGER NOT NULL DEFAULT 1,
+    MustChangePassword INTEGER NOT NULL DEFAULT 0,
+    CreatedAt          TEXT DEFAULT (datetime('now')),
+    LastLoginAt        TEXT
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_Users_Username ON Users (Username);
+
+CREATE TABLE IF NOT EXISTS Sessions (
+    Token     TEXT PRIMARY KEY,
+    UserID    INTEGER NOT NULL REFERENCES Users(UserID) ON DELETE CASCADE,
+    CreatedAt TEXT DEFAULT (datetime('now')),
+    ExpiresAt TEXT NOT NULL,
+    UserAgent TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_Sessions_User ON Sessions (UserID);
+
+-- ============ Service record attachments (PDF / images / docs) ============
+CREATE TABLE IF NOT EXISTS ServiceAttachments (
+    AttachmentID INTEGER PRIMARY KEY AUTOINCREMENT,
+    ServiceID    INTEGER NOT NULL REFERENCES ServiceJobs(ServiceID) ON DELETE CASCADE,
+    StoredName   TEXT NOT NULL,        -- name on disk (data/attachments/<id>/...)
+    OriginalName TEXT NOT NULL,
+    MimeType     TEXT,
+    FileSize     INTEGER DEFAULT 0,
+    Caption      TEXT DEFAULT '',
+    UploadedBy   INTEGER,
+    UploadedAt   TEXT DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_Att_Service ON ServiceAttachments (ServiceID);
+
+-- ============ Filter cross-reference index (advanced equivalence search) ============
+-- One row per (filter, part-number) pair. FilterID is a plain integer (NOT a FK)
+-- so that re-seeding the Filters catalog never cascade-deletes manual entries.
+CREATE TABLE IF NOT EXISTS FilterCrossRefs (
+    XRefID       INTEGER PRIMARY KEY AUTOINCREMENT,
+    FilterID     INTEGER,
+    Brand        TEXT DEFAULT '',
+    PartNumber   TEXT NOT NULL,
+    NormalizedPN TEXT NOT NULL,
+    RefType      TEXT DEFAULT 'cross',   -- 'oem' | 'hifi' | 'cross' | 'manual'
+    Note         TEXT DEFAULT '',
+    Source       TEXT DEFAULT 'auto',    -- 'auto' (parsed) | 'manual' (user added)
+    CreatedAt    TEXT DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_XRef_Norm   ON FilterCrossRefs (NormalizedPN);
+CREATE INDEX IF NOT EXISTS idx_XRef_Filter ON FilterCrossRefs (FilterID);
+CREATE INDEX IF NOT EXISTS idx_XRef_Brand  ON FilterCrossRefs (Brand);
 `);
 
 // Lightweight migration: add the Quantity column to ServiceFilters if upgrading an older DB.

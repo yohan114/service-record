@@ -290,6 +290,8 @@ async function openNewServiceSheet(vehicleId, presetDate, job) {
     if (job) fillFormFromJob(job);
     else recalcTotals();
 
+    if (typeof renderAttachmentsPanel === 'function') renderAttachmentsPanel();
+
     openModal('newServiceModal');
     document.getElementById('serviceSheet').scrollTop = 0;
 }
@@ -390,8 +392,12 @@ async function submitServiceJob(e) {
             await api('/api/services/' + currentServiceId, 'PUT', payload);
             toast('Service updated');
         } else {
-            await api('/api/services', 'POST', payload);
+            const res = await api('/api/services', 'POST', payload);
             toast('Service saved');
+            // upload any files queued while the record was still new
+            if (typeof flushPendingAttachments === 'function' && pendingAttachments.length) {
+                await flushPendingAttachments(res.serviceId);
+            }
         }
         closeModal('newServiceModal');
         refreshAfterSave();
